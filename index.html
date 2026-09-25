@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Delta Crop Costing Tool | 21st Century Community Garden</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bitter:wght@500;600;700&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bayou:#1E4636; --bg:#EEF1EC; --paper:#FFFFFF; --ink:#1B2420; --muted:#56635B;
+  --line:#D3DAD1; --gold:#C38A1E; --gold-soft:#F3E4C1; --gain:#2B7545; --loss:#A63E2B; --field:#F7F9F6;
+  --seg1:#8A6A43; --seg2:#3F6E8C; --seg3:#2B7545;
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#111915; --paper:#18231E; --ink:#E4EBE6; --muted:#9BA9A1; --line:#2C3A33; --gold:#DDA83D; --gold-soft:#3A3120;
+  --gain:#5FB27B; --loss:#E27B62; --field:#1E2B25; --bayou:#173A2C; --seg1:#A98659; --seg2:#5C8FB0; --seg3:#4FA06C;
+}}
+:root[data-theme="dark"]{
+  --bg:#111915; --paper:#18231E; --ink:#E4EBE6; --muted:#9BA9A1; --line:#2C3A33; --gold:#DDA83D; --gold-soft:#3A3120;
+  --gain:#5FB27B; --loss:#E27B62; --field:#1E2B25; --bayou:#173A2C; --seg1:#A98659; --seg2:#5C8FB0; --seg3:#4FA06C;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Public Sans",system-ui,-apple-system,"Segoe UI",Arial,sans-serif;font-size:16px;line-height:1.5}
+h1,h2,h3{font-family:"Bitter",Georgia,"Times New Roman",serif;line-height:1.2;margin:0}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+a{color:inherit}
+
+header.brand{background:var(--bayou);color:#fff;padding:20px 20px 0}
+.brand-inner{max-width:1080px;margin:0 auto}
+.brand-top{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.brand-top svg{height:30px;width:auto;flex:none}
+.brand-names{font-size:14px;line-height:1.35;border-left:1px solid rgba(255,255,255,.35);padding-left:16px}
+.brand-names strong{display:block;font-weight:600;font-size:15px}
+.hero{padding:26px 0 22px}
+.hero h1{font-size:clamp(28px,5vw,42px);font-weight:700;letter-spacing:-.01em}
+.hero p{margin:10px 0 0;max-width:62ch;color:#D9E6DE;font-size:17px}
+.formula{display:inline-flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:16px;font-family:"Bitter",Georgia,serif;font-size:16px;color:#fff}
+.formula span{background:rgba(255,255,255,.12);border-radius:8px;padding:4px 10px}
+.formula b{color:#F0C766;font-weight:600}
+nav.steps{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none}
+nav.steps button{background:transparent;border:0;color:#CFE0D6;padding:12px 16px 14px;border-radius:10px 10px 0 0;cursor:pointer;white-space:nowrap;font-weight:600;font-size:15px}
+nav.steps button .n{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;border:1.5px solid currentColor;font-size:12px;margin-right:8px}
+nav.steps button[aria-selected="true"]{background:var(--bg);color:var(--ink)}
+
+main{max-width:1080px;margin:0 auto;padding:24px 20px 60px}
+section.view{display:none}
+section.view.on{display:block}
+.intro{max-width:66ch;color:var(--muted);margin:0 0 20px}
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px}
+@media (max-width:820px){.grid2{grid-template-columns:minmax(0,1fr)}}
+.stack > * + *{margin-top:20px}
+.panel{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:20px}
+.panel h2{font-size:20px;margin-bottom:4px}
+.panel h2 .st{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--bayou);color:#fff;font-size:13px;font-family:"Public Sans",sans-serif;margin-right:10px;vertical-align:2px}
+.panel .sub{color:var(--muted);font-size:14px;margin:0 0 14px}
+.bucket{font-size:13px;font-weight:600;color:var(--muted);margin:14px 0 2px}
+.field{display:grid;grid-template-columns:minmax(0,1fr) 132px;align-items:center;gap:10px;padding:7px 0;border-bottom:1px dashed var(--line)}
+.field:last-child{border-bottom:0}
+.field label{font-size:15px}
+.field label small{display:block;color:var(--muted);font-size:13px}
+.field.full{grid-template-columns:minmax(0,1fr)}
+.field.full select,.field.full input{margin-top:4px}
+input[type=text],input[type=number],select{width:100%;background:var(--field);border:1px solid var(--line);border-radius:8px;padding:8px 10px;min-height:40px}
+input[type=number]{text-align:right;font-variant-numeric:tabular-nums}
+.inwrap{position:relative}
+.inwrap .pre{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none;font-size:14px}
+.inwrap input{padding-left:22px}
+.row-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+.btn{border:1px solid var(--bayou);background:var(--bayou);color:#fff;border-radius:999px;padding:9px 18px;cursor:pointer;font-weight:600;font-size:15px}
+.btn.ghost{background:transparent;color:var(--ink);border-color:var(--line)}
+.btn.danger{background:transparent;color:var(--loss);border-color:var(--loss)}
+.oh-row{display:grid;grid-template-columns:minmax(0,1fr) 110px 36px;gap:8px;align-items:center;padding:5px 0}
+.x{border:0;background:transparent;color:var(--muted);font-size:20px;cursor:pointer;border-radius:6px;height:36px}
+.total-line{display:flex;justify-content:space-between;gap:12px;font-weight:700;padding-top:10px;margin-top:6px;border-top:2px solid var(--ink);font-variant-numeric:tabular-nums}
+.note{font-size:14px;color:var(--muted);margin:10px 0 0}
+.callout{background:var(--gold-soft);border-radius:10px;padding:12px 14px;font-size:15px;margin-top:14px}
+.warn{color:var(--loss);font-size:14px;margin:8px 0 0}
+
+.picker{display:flex;gap:10px;flex-wrap:wrap;align-items:end;margin-bottom:18px}
+.picker > div{flex:1 1 220px}
+.picker label{display:block;font-size:13px;color:var(--muted);margin-bottom:4px}
+.window{display:block;margin:2px 0 8px;font-size:14px;color:var(--muted)}
+.window b{color:var(--ink);font-weight:600}
+
+/* verdict + margin bar */
+.verdict{padding:16px;border-radius:12px;background:var(--field);border:1px solid var(--line)}
+.verdict .big{font-family:"Bitter",Georgia,serif;font-size:40px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums}
+.verdict .said{font-size:16px;font-weight:600;margin-top:6px}
+.verdict .said.ok{color:var(--gain)} .verdict .said.no{color:var(--loss)}
+.mbar{position:relative;margin:26px 0 6px}
+.mbar .track{display:flex;height:36px;border-radius:8px;overflow:hidden;background:var(--paper);border:1px solid var(--line)}
+.mbar .track span{height:100%;transition:width .35s ease;background-image:repeating-linear-gradient(90deg,rgba(255,255,255,.14) 0 2px,transparent 2px 9px)}
+.mbar .goal{position:absolute;top:-20px;bottom:-4px;width:0;border-left:2px dashed var(--ink);transition:left .35s ease}
+.mbar .goal em{position:absolute;top:-2px;left:6px;font-style:normal;font-size:12px;font-weight:600;white-space:nowrap}
+.mbar .goal.flip em{left:auto;right:6px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:13px;color:var(--muted);margin-top:10px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+@media (prefers-reduced-motion:reduce){.mbar .track span,.mbar .goal{transition:none}}
+
+.kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:16px}
+.kpi{border:1px solid var(--line);border-radius:10px;padding:12px}
+.kpi .v{font-family:"Bitter",Georgia,serif;font-size:23px;font-weight:700;font-variant-numeric:tabular-nums}
+.kpi .l{font-size:13px;color:var(--muted)}
+.pos{color:var(--gain)} .neg{color:var(--loss)}
+h3.sec{font-size:17px;margin:24px 0 4px}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
+.tscroll{overflow-x:auto}
+th,td{padding:8px 10px;text-align:right;border-bottom:1px solid var(--line);font-size:14px;white-space:nowrap}
+th{font-weight:600;color:var(--muted)}
+th:first-child,td:first-child{text-align:left}
+tfoot td{font-weight:700;border-top:2px solid var(--ink);border-bottom:0}
+.left-row{display:flex;gap:14px;align-items:center;margin-top:10px;padding:14px;border-radius:10px;border:1px solid var(--line)}
+.left-row .v{font-family:"Bitter",Georgia,serif;font-size:26px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.empty{text-align:center;padding:40px 20px;color:var(--muted)}
+.season-bars{display:grid;gap:10px;margin-top:6px}
+.sb .top{display:flex;justify-content:space-between;font-size:14px}
+.sb .track{height:12px;background:var(--field);border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.sb .fill{height:100%;background:var(--seg3)}
+.sb .fill.over{background:var(--loss)}
+.rankhead{display:flex;gap:12px;flex-wrap:wrap;align-items:end;justify-content:space-between}
+.rankhead select{width:auto;min-width:220px}
+.guide{max-width:70ch}
+.guide h3{font-size:19px;margin:24px 0 6px}
+.guide ol,.guide ul{padding-left:22px}
+.guide li{margin:6px 0}
+.sig{margin-top:28px;font-family:"Bitter",Georgia,serif}
+footer{max-width:1080px;margin:0 auto;padding:0 20px 40px;color:var(--muted);font-size:13px}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s}
+.toast.show{opacity:1}
+.hidden{display:none!important}
+@media print{ nav.steps,.row-actions,.picker,.btn,footer,.toast{display:none!important} body{background:#fff} .panel{break-inside:avoid;border-color:#bbb} header.brand{-webkit-print-color-adjust:exact;print-color-adjust:exact} .panel[style*="sticky"]{position:static!important} }
+</style>
+</head>
+<body>
+<header class="brand">
+  <div class="brand-inner">
+    <div class="brand-top">
+      <svg role="img" aria-label="AmeriCorps" width="198" height="45" viewBox="0 0 198 45" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path fill-rule="evenodd" clip-rule="evenodd" d="M31.7676 33.318L28.7424 27.2236H20.4141C19.8331 27.2236 19.3586 27.6969 19.3586 28.2808V28.9965C19.3586 29.7762 18.7272 30.4066 17.9486 30.4066H10.0387L8.52995 33.4422H6.81007L9.30854 28.4243H18.303C18.8841 28.4243 19.3586 27.951 19.3586 27.3672V26.6515C19.3586 25.8717 19.99 25.2394 20.7686 25.2394H27.7527L27.0109 23.7517H20.4141C19.835 23.7517 19.3605 24.223 19.3586 24.8068V25.5245C19.3586 26.3043 18.7272 26.9366 17.9486 26.9366H10.0503L11.0381 24.9523H18.303C18.8841 24.9523 19.3566 24.481 19.3586 23.8991V23.1814C19.3586 22.4017 19.99 21.7693 20.7686 21.7693H26.0192L25.2774 20.2816H20.4141C19.8331 20.2816 19.3605 20.753 19.3586 21.3349V22.0525C19.3586 22.8323 18.7272 23.4665 17.9486 23.4665H11.778L12.7677 21.4803H18.303C18.8841 21.4803 19.3566 21.009 19.3586 20.4271V19.7094C19.3586 18.9297 19.988 18.2974 20.7666 18.2974H24.2858L19.3102 8.33141H24.9211C25.8585 8.33141 26.7165 8.86287 27.1368 9.70274L38.9105 33.318H31.7676ZM22.4594 0.190674C10.1065 0.190674 0.0932617 10.2187 0.0932617 22.5898C0.0932617 34.9629 10.1065 44.9909 22.4594 44.9909C34.8123 44.9909 44.8275 34.9629 44.8275 22.5898C44.8275 10.2187 34.8123 0.190674 22.4594 0.190674Z" fill="white"/>
+<path fill-rule="evenodd" clip-rule="evenodd" d="M62.1584 24.4194H66.7041L64.458 17.934L62.1584 24.4194ZM68.0258 28.231H60.7841L59.4361 32.0427H55.0479L62.105 13.2751H66.9421L73.9204 32.0427H69.3738L68.0258 28.231Z" fill="white"/>
+<path fill-rule="evenodd" clip-rule="evenodd" d="M75.4116 32.0427V18.887H79.2449V20.3957C79.9058 19.2311 81.597 18.4897 83.0246 18.4897C84.9004 18.4897 86.2484 19.2573 86.9094 20.5543C87.9406 19.0724 89.2088 18.4897 90.9796 18.4897C93.4649 18.4897 95.8431 19.9455 95.8431 23.5191V32.0427H91.9584V24.4195C91.9584 23.175 91.2974 22.1958 89.8698 22.1958C88.443 22.1958 87.6762 23.2811 87.6762 24.4457V32.0427H83.7118V24.4195C83.7118 23.175 83.0507 22.1958 81.597 22.1958C80.1963 22.1958 79.4295 23.2811 79.4295 24.472V32.0427H75.4116Z" fill="white"/>
+<path fill-rule="evenodd" clip-rule="evenodd" d="M106.586 23.8897C106.534 22.8838 105.847 21.6661 103.943 21.6661C102.251 21.6661 101.406 22.91 101.326 23.8897H106.586ZM110.234 28.257C109.599 30.5338 107.511 32.4395 104.181 32.4395C100.56 32.4395 97.3354 29.8456 97.3354 25.4247C97.3354 21.1897 100.481 18.4895 103.89 18.4895C107.961 18.4895 110.472 21.0043 110.472 25.2397C110.472 25.7954 110.419 26.4043 110.392 26.4836H101.248C101.326 27.9661 102.674 29.0245 104.234 29.0245C105.688 29.0245 106.507 28.3364 106.877 27.3043L110.234 28.257Z" fill="white"/>
+<path fill-rule="evenodd" clip-rule="evenodd" d="M120.319 22.8574C119.87 22.7519 119.447 22.725 119.05 22.725C117.438 22.725 115.985 23.6785 115.985 26.2986V32.0429H111.967V18.8872H115.853V20.6606C116.54 19.1783 118.205 18.7549 119.262 18.7549C119.658 18.7549 120.055 18.8078 120.319 18.8872V22.8574Z" fill="white"/>
+<path fill-rule="evenodd" clip-rule="evenodd" d="M121.812 32.0426H125.83V18.8869H121.812V32.0426ZM123.794 12.5076C125.115 12.5076 126.173 13.566 126.173 14.8631C126.173 16.1605 125.115 17.219 123.794 17.219C122.525 17.219 121.468 16.1605 121.468 14.8631C121.468 13.566 122.525 12.5076 123.794 12.5076Z" fill="white"/>
+<path fill-rule="evenodd" clip-rule="evenodd" d="M127.312 22.6987C127.312 16.8488 131.753 12.8782 136.986 12.8782C142.616 12.8782 145.1 16.5047 145.709 19.2049L141.77 20.4488C141.479 19.1518 140.29 16.9546 136.986 16.9546C134.475 16.9546 131.647 18.7547 131.647 22.6987C131.647 26.2193 134.237 28.2575 137.039 28.2575C140.29 28.2575 141.585 26.0868 141.955 24.7368L145.946 25.8752C145.338 28.4691 142.854 32.44 137.039 32.44C131.647 32.44 127.312 28.5485 127.312 22.6987Z" fill="white"/>
+<path fill-rule="evenodd" clip-rule="evenodd" d="M156.879 25.4398C156.879 23.2162 155.452 22.1839 153.919 22.1839C152.412 22.1839 150.958 23.2162 150.958 25.4398C150.958 27.6367 152.412 28.7219 153.919 28.7219C155.452 28.7219 156.879 27.6635 156.879 25.4398ZM160.897 25.4398C160.897 29.5162 157.857 32.428 153.919 32.428C150.007 32.428 146.941 29.5162 146.941 25.4398C146.941 21.3635 150.007 18.478 153.919 18.478C157.857 18.478 160.897 21.3635 160.897 25.4398Z" fill="white"/>
+<path fill-rule="evenodd" clip-rule="evenodd" d="M170.741 22.8469C170.292 22.7414 169.869 22.7144 169.472 22.7144C167.86 22.7144 166.406 23.668 166.406 26.288V32.0323H162.388V18.8766H166.274V20.65C166.961 19.1678 168.626 18.7441 169.683 18.7441C170.08 18.7441 170.476 18.7973 170.741 18.8766V22.8469Z" fill="white"/>
+<path fill-rule="evenodd" clip-rule="evenodd" d="M179.16 22.1854C177.6 22.1854 176.2 23.2439 176.2 25.4413C176.2 27.6118 177.6 28.7234 179.16 28.7234C180.745 28.7234 182.147 27.6382 182.147 25.4413C182.147 23.2439 180.745 22.1854 179.16 22.1854ZM172.234 37.0616V18.8766H176.12V20.2266C176.675 19.3793 178.103 18.5588 179.979 18.5588C183.785 18.5588 186.085 21.4705 186.085 25.4145C186.085 29.4384 183.495 32.3232 179.82 32.3232C178.129 32.3232 176.861 31.7413 176.252 31V37.0616H172.234Z" fill="white"/>
+<path fill-rule="evenodd" clip-rule="evenodd" d="M190.488 27.6914C190.541 28.5912 191.175 29.4648 192.55 29.4648C193.581 29.4648 194.083 28.9091 194.083 28.3264C194.083 27.85 193.765 27.453 192.788 27.2412L191.281 26.8971C188.479 26.2882 187.369 24.7002 187.369 22.8471C187.369 20.4384 189.484 18.4797 192.417 18.4797C196.223 18.4797 197.545 20.8618 197.677 22.3975L194.348 23.0061C194.242 22.1327 193.687 21.3914 192.471 21.3914C191.704 21.3914 191.043 21.8415 191.043 22.5297C191.043 23.0854 191.492 23.4034 192.074 23.5089L193.819 23.853C196.541 24.4093 197.863 26.0504 197.863 27.9823C197.863 30.2323 196.145 32.4295 192.629 32.4295C188.505 32.4295 187.185 29.7559 187.079 28.3002L190.488 27.6914Z" fill="white"/>
+</svg>
+      <div class="brand-names">
+        <strong>21st Century Community Garden</strong>
+        AmeriCorps Rising Roots Community Garden Program
+      </div>
+    </div>
+    <div class="hero">
+      <h1>Delta Crop Costing Tool</h1>
+      <p>Know what each crop costs you to grow, whether it clears your gross margin goal, and which crops deserve more of your beds next season.</p>
+      <div class="formula" aria-label="Sales minus direct costs minus direct labor equals gross profit">
+        <span>Sales</span>−<span>Direct inputs</span>−<span>Direct labor</span>=<span><b>Gross profit</b></span>
+      </div>
+    </div>
+    <nav class="steps" role="tablist" aria-label="Tool sections">
+      <button role="tab" aria-selected="true" data-view="setup"><span class="n">1</span>Garden setup</button>
+      <button role="tab" aria-selected="false" data-view="budget"><span class="n">2</span>Crop budget</button>
+      <button role="tab" aria-selected="false" data-view="plan"><span class="n">3</span>Whole garden</button>
+      <button role="tab" aria-selected="false" data-view="guide">How to use it</button>
+    </nav>
+  </div>
+</header>
+
+<main>
+<!-- ============ 1 SETUP ============ -->
+<section class="view on" id="v-setup">
+  <p class="intro">Start with the whole garden. Your labor rate is used in every crop budget. Your yearly overhead costs are what your crops' gross profit has to cover before the garden truly comes out ahead.</p>
+  <div class="grid2">
+    <div class="stack">
+      <div class="panel">
+        <h2>Your garden</h2>
+        <p class="sub">Who is growing and where.</p>
+        <div class="field full"><label for="g-name">Garden or plot name</label><input type="text" id="g-name" data-g="name"></div>
+        <div class="field full"><label for="g-grower">Grower</label><input type="text" id="g-grower" data-g="grower"></div>
+        <div class="field"><label for="g-role">I am a</label>
+          <select id="g-role" data-g="role">
+            <option>Rising Roots AmeriCorps member</option>
+            <option>Master Gardener trainee</option>
+            <option>Community gardener</option>
+            <option>Market grower</option>
+          </select></div>
+        <div class="field"><label for="g-county">County</label><select id="g-county" data-g="county"></select></div>
+        <div class="field"><label for="g-feet">Total bed feet<small>Length of every bed added together</small></label><input type="number" id="g-feet" data-g="bedFeet" min="1" inputmode="decimal"></div>
+        <div class="field"><label for="g-len">Usual bed length, feet<small>Starting length for new crop budgets</small></label><input type="number" id="g-len" data-g="bedLength" min="1" inputmode="decimal"></div>
+        <div class="field"><label for="g-seasons">Growing seasons per year<small>Delta beds can carry spring, summer and fall crops</small></label>
+          <select id="g-seasons" data-g="seasons"><option value="1">1</option><option value="2">2</option><option value="3">3</option></select></div>
+      </div>
+      <div class="panel">
+        <h2>Labor</h2>
+        <p class="sub">Count every hour, paid or not. Service hours and volunteer hours are real costs; valuing them shows what a crop would cost to grow if someone had to be paid.</p>
+        <div class="field"><label for="g-rate">Cost per hour of field work</label><div class="inwrap"><span class="pre">$</span><input type="number" id="g-rate" data-g="laborRate" min="0" step="0.25" inputmode="decimal"></div></div>
+        <div class="field"><label for="g-fringe">Taxes and fringe benefits, %<small>Payroll taxes, workers' comp, benefits</small></label><input type="number" id="g-fringe" data-g="fringe" min="0" max="100" inputmode="decimal"></div>
+        <div class="total-line"><span>Effective labor cost per hour</span><span id="eff-rate">$0</span></div>
+        <p class="note">Mississippi follows the $7.25 federal minimum wage. Many small market growers price their time at $15 to $20 an hour. Use the number you would need to earn if this garden were your job.</p>
+      </div>
+    </div>
+    <div class="panel">
+      <h2>Yearly overhead costs</h2>
+      <p class="sub">Fixed costs you pay for the whole garden no matter what you plant. Crop budgets leave these out; the Whole garden view checks whether your gross profit covers them.</p>
+      <div id="oh-list"></div>
+      <div class="row-actions"><button class="btn ghost" id="oh-add">Add a cost</button></div>
+      <div class="total-line"><span>Total yearly overhead</span><span id="oh-total">$0</span></div>
+      <div class="callout" id="oh-rate"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 2 BUDGET ============ -->
+<section class="view" id="v-budget">
+  <p class="intro">This is a top-down crop budget. Start with the price the market will pay and your gross margin goal, then enter what the crop costs to grow, harvest, pack and sell. The tool tells you whether you reached your goal and what price would get you there.</p>
+  <div class="picker">
+    <div><label for="p-select">Crop you are working on</label><select id="p-select"></select></div>
+    <div><label for="p-new">Add a crop</label><select id="p-new"></select></div>
+    <button class="btn" id="p-add">Add crop</button>
+  </div>
+
+  <div id="budget-empty" class="panel empty">
+    <h2>No crops yet</h2>
+    <p>Choose a crop under <b>Add a crop</b> to build your first crop budget.</p>
+  </div>
+
+  <div id="budget-body" class="grid2 hidden">
+    <div class="stack">
+      <div class="panel">
+        <h2><span class="st">1</span>Crop and bed</h2>
+        <span class="window" id="b-window"></span>
+        <div class="field full"><label for="b-name">Crop</label><input type="text" id="b-name" data-c="name"></div>
+        <div class="field"><label for="b-unit">Harvest unit<small>bunch, lb, pint, head, each</small></label><input type="text" id="b-unit" data-c="unit"></div>
+        <div class="field"><label for="b-season">Season</label><select id="b-season" data-c="season"><option>Spring</option><option>Summer</option><option>Fall</option></select></div>
+        <div class="field"><label for="b-len">Bed length, feet</label><input type="number" id="b-len" data-c="bedLength" min="1" inputmode="decimal"></div>
+        <div class="field"><label for="b-rows">Rows per bed</label><input type="number" id="b-rows" data-c="rows" min="1" step="1" inputmode="numeric"></div>
+        <div class="row-actions">
+          <button class="btn" id="b-fill">Fill Delta starter values</button>
+          <button class="btn danger" id="b-del">Delete crop</button>
+        </div>
+        <p class="note">Starter values fill yield, inputs and hours for one bed of the length and rows above. Replace them with your own records whenever you have them.</p>
+      </div>
+
+      <div class="panel">
+        <h2><span class="st">2</span>Yield, price and goal</h2>
+        <p class="sub">What one bed produces, where it sells, and the margin you need.</p>
+        <div class="field"><label for="b-yield">Harvest per bed<small id="b-yield-u">units, before losses</small></label><input type="number" id="b-yield" data-c="yieldBed" min="0" inputmode="decimal"></div>
+        <div class="field full"><label for="b-channel">Where it sells</label><select id="b-channel" data-c="channel"></select></div>
+        <div class="field"><label for="b-price">Price per unit</label><div class="inwrap"><span class="pre">$</span><input type="number" id="b-price" data-c="price" min="0" step="0.05" inputmode="decimal"></div></div>
+        <div class="field full"><label for="b-src">Where this price came from</label>
+          <select id="b-src" data-c="priceSrc">
+            <option value="starter">Starter estimate in this tool</option>
+            <option value="historic">My own past sales</option>
+            <option value="grower">Asked another grower</option>
+            <option value="buyer">Asked a wholesale buyer</option>
+            <option value="usda">USDA Agricultural Marketing Service report</option>
+          </select></div>
+        <p class="warn" id="b-src-warn">This price is still the starter estimate. Check it against your own sales or another Delta grower before you trust the results.</p>
+        <div class="field"><label for="b-goal">Gross margin goal, %<small id="b-goal-hint">40 to 60% for retail</small></label><input type="number" id="b-goal" data-c="gmGoal" min="0" max="95" inputmode="decimal"></div>
+      </div>
+
+      <div class="panel">
+        <h2><span class="st">3</span>Beds, losses and sharing</h2>
+        <p class="sub">How many beds you plant and where the harvest goes.</p>
+        <div class="field"><label for="b-beds">Number of beds</label><input type="number" id="b-beds" data-c="beds" min="0" step="0.5" inputmode="decimal"></div>
+        <div class="field"><label for="b-lf">Lost before harvest, %<small>Weeds, insects, disease, heat, storms, not enough hands to pick</small></label><input type="number" id="b-lf" data-c="lossField" min="0" max="100" inputmode="decimal"></div>
+        <div class="field"><label for="b-ls">Lost after harvest, %<small>Shrink at market, no buyer, no cooler</small></label><input type="number" id="b-ls" data-c="shrink" min="0" max="100" inputmode="decimal"></div>
+        <div class="field"><label for="b-sold">Sold, %</label><input type="number" id="b-sold" data-c="soldPct" min="0" max="100" inputmode="decimal"></div>
+        <div class="field"><label for="b-don">Donated or shared, %<small>Food pantry, church, neighbors</small></label><input type="number" id="b-don" data-c="donPct" min="0" max="100" inputmode="decimal"></div>
+        <p class="note" id="b-home"></p>
+      </div>
+
+      <div class="panel">
+        <h2><span class="st">4</span>Direct labor, hours per bed</h2>
+        <p class="sub">Hours are multiplied by your effective labor cost of <b id="b-eff">$0</b> an hour from Garden setup.</p>
+        <div id="hour-list"></div>
+        <div class="total-line"><span>Hours for all beds</span><span id="hour-total">0</span></div>
+      </div>
+
+      <div class="panel">
+        <h2><span class="st">5</span>Direct inputs, cost per bed</h2>
+        <p class="sub">What you spend on this crop only. Garden-wide costs belong in yearly overhead.</p>
+        <div id="cost-list"></div>
+        <div class="total-line"><span>Inputs for all beds</span><span id="cost-total">$0</span></div>
+      </div>
+    </div>
+
+    <div>
+      <div class="panel" style="position:sticky;top:calc(12px + env(safe-area-inset-top,0px))">
+        <h2>Did you reach your goal?</h2>
+        <div class="verdict" id="verdict" style="margin-top:12px"></div>
+        <div class="kpis" id="kpis"></div>
+
+        <h3 class="sec">Money left on the table</h3>
+        <div id="left"></div>
+
+        <h3 class="sec">Pull a lever</h3>
+        <p class="note" style="margin:0 0 8px">How gross profit changes if you sell more of what you grow, grow more, or charge more.</p>
+        <div class="tscroll"><table id="levers"></table></div>
+
+        <h3 class="sec">Feeding the community</h3>
+        <div id="feed"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 3 WHOLE GARDEN ============ -->
+<section class="view" id="v-plan">
+  <p class="intro">Every crop side by side, the way a whole-farm review works: every cost assigned somewhere, and every crop ranked. Gut feelings about which crops pay are often wrong. This is where you find out.</p>
+  <div id="plan-empty" class="panel empty"><h2>No crops yet</h2><p>Add crops in step 2 and they will show up here.</p></div>
+  <div id="plan-body" class="hidden">
+    <div class="panel">
+      <h2>Garden totals</h2>
+      <div class="kpis" id="plan-kpis" style="grid-template-columns:repeat(auto-fit,minmax(160px,1fr))"></div>
+      <div class="callout" id="oh-cover"></div>
+    </div>
+    <div class="grid2" style="margin-top:20px">
+      <div class="panel">
+        <div class="rankhead">
+          <div><h2>Crop rankings</h2><p class="sub" style="margin:0">Each view tells a different story.</p></div>
+          <select id="rank-by" aria-label="Rank crops by">
+            <option value="netPct">Net profit %</option>
+            <option value="net">Total net profit</option>
+            <option value="gp">Gross profit</option>
+            <option value="gm">Gross margin %</option>
+            <option value="perFt">Net profit per bed foot</option>
+          </select>
+        </div>
+        <p class="note" id="rank-note"></p>
+        <div id="plan-chart" style="margin-top:10px"></div>
+      </div>
+      <div class="panel">
+        <h2>Bed space by season</h2>
+        <p class="sub">Planted feet compared with your total bed feet.</p>
+        <div class="season-bars" id="season-bars"></div>
+        <p class="note">Planting all three Delta seasons spreads yearly overhead across more crops.</p>
+      </div>
+    </div>
+    <div class="panel" style="margin-top:20px">
+      <h2>All crops</h2>
+      <div class="tscroll" style="margin-top:10px"><table id="plan-table"></table></div>
+      <div class="row-actions"><button class="btn" id="csv">Download spreadsheet (CSV)</button><button class="btn" id="print">Print or save as PDF</button></div>
+      <div class="row-actions"><button class="btn ghost" id="save-plan">Save plan file</button><button class="btn ghost" id="open-plan">Open plan file</button><input type="file" id="plan-file" accept=".json,application/json" class="hidden"><button class="btn ghost" id="reset">Start a new plan</button></div>
+      <p class="note">Your plan saves automatically in this browser on this device. Use <b>Save plan file</b> to back it up or move it to another computer, and <b>Open plan file</b> to load it again.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ GUIDE ============ -->
+<section class="view" id="v-guide">
+  <div class="panel guide">
+    <h2>How to use the Delta Crop Costing Tool</h2>
+    <p>Every business runs on one rule: you have to take in more than you spend. Sales minus costs is profit. This tool helps you see that rule crop by crop, so you can put your beds, hours and money into the crops that pay their way and feed the most people.</p>
+
+    <h3>The top-down method</h3>
+    <ol>
+      <li><b>Find the price.</b> Use your own past sales first. If you have none, ask another Delta grower, ask a wholesale buyer, or check a USDA Agricultural Marketing Service price report.</li>
+      <li><b>Set a gross margin goal.</b> Gross margin is the share of every sales dollar left after direct inputs and direct labor. For retail sales like farmers markets and farm stands, 40 to 60 percent is a good target. For wholesale, 20 percent is a good target and hard to reach.</li>
+      <li><b>Enter your crop costs.</b> Direct inputs like seed, compost and packaging, and every hour it takes to grow, harvest, wash, pack and sell the crop.</li>
+      <li><b>Check the result.</b> Did the crop reach your goal? If not, the tool shows the price that would get you there.</li>
+    </ol>
+
+    <h3>Two kinds of cost</h3>
+    <ul>
+      <li><b>Operating or direct costs</b> go up and down with how much you grow: seed, fertilizer, packaging, and the labor to grow, harvest, wash and pack. These go in each crop budget.</li>
+      <li><b>Overhead or fixed costs</b> stay the same no matter what you plant: plot fees, insurance, tool repairs, fencing, fuel to market. These go in Garden setup. Your gross profit from all crops has to cover them, plus any pay for the grower, before the garden makes a true profit.</li>
+    </ul>
+
+    <h3>Three levers for more income</h3>
+    <ul>
+      <li><b>Sell all you have.</b> Losses before harvest come from planting too much, weeds, insects and disease, weather, and not enough hands to pick. Losses after harvest come from no market, produce wilting on the table, and no cooler. In the Delta heat, after-harvest losses climb fast in July and August.</li>
+      <li><b>Grow more, or get better yield</b> from the beds you have. Only worth it if the crop already makes money on every unit.</li>
+      <li><b>Change your price.</b> A small price change makes a big difference in gross profit. If your break-even price is above what you charge, growing more only loses more.</li>
+    </ul>
+
+    <h3>Reading the Whole garden rankings</h3>
+    <ul>
+      <li><b>Net profit %</b> compares what a crop earns to what it costs, after its share of overhead. It shows which crops use your money best.</li>
+      <li><b>Total net profit</b> is the dollars a crop brings home. A crop high on this list also has customers who want a lot of it.</li>
+      <li><b>Gross profit</b> is what is left after production costs. It shows your growing skill with that crop.</li>
+    </ul>
+
+    <h3>Delta notes</h3>
+    <ul>
+      <li>Much of the Delta sits on heavy buckshot clay and silty loam. Get a soil test through the MSU Extension Soil Testing Lab before buying lime or fertilizer.</li>
+      <li>Planting windows shown are typical for the Delta. Confirm dates with the MSU Extension garden planting guide and the frost forecast.</li>
+      <li>Starter prices are rough Delta farmers market figures for 2026. Replace them with what your customers at the Greenville, Cleveland and Vicksburg markets actually pay.</li>
+      <li>Community food value counts the produce you donate, share or take home at market price. It is part of the garden's return even when no money changes hands.</li>
+    </ul>
+
+    <h3>For Master Gardener classes</h3>
+    <p>Have each trainee budget the same crop in the same bed, then compare. Differences in hours, losses and prices start the best conversations about how a garden really runs.</p>
+
+    <h3>A word of caution</h3>
+    <p>This tool is only as good as the numbers you put in. It assumes your gross margin goal is realistic and that your prices and yields come from real records. Keep a harvest log and a time log this season, and next year's budgets will tell you the truth.</p>
+
+    <p class="sig">Leo Spencer Turnipseed<br><span style="font-family:'Public Sans',sans-serif;font-size:14px;color:var(--muted)">Program Director, AmeriCorps Rising Roots Community Garden Program<br>21st Century Community Garden</span></p>
+    <p class="note">Method adapted from Ellen Polishuk (Plant to Profit), "Dealing with the Squeeze: Finding Profit When Input Costs are High," presented to the Louisiana Small Scale Agriculture Coalition on June 30, 2025, including the top-down crop costing worksheet she shared and the whole-farm ranking approach of the Veggie Compass tool. Starter values are estimates for teaching and planning, not guarantees.</p>
+  </div>
+</section>
+</main>
+<footer>21st Century Community Garden and AmeriCorps Rising Roots Community Garden Program, Mississippi Delta Nature and Learning Center, Greenville, Mississippi.</footer>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+"use strict";
+// key, name, unit, yield per 100 bed ft, retail price, Delta window, seed/plants $/100ft, supplies $/100ft, harvest hrs/100ft, packaging $/unit, transplanted, season, typical rows
+const LIB = [
+ ["collards","Collard greens","bunch",150,4.00,"Feb to Apr, and Aug to Sep",25,8,6,.12,1,"Fall",2],
+ ["mustard","Mustard greens","bunch",120,3.50,"Feb to Mar, and Aug to Oct",4,5,4,.12,0,"Fall",3],
+ ["turnip","Turnip greens","bunch",100,4.00,"Feb to Mar, and Aug to Oct",3,5,4,.12,0,"Fall",3],
+ ["kale","Kale","bunch",130,3.50,"Feb to Mar, and Aug to Sep",20,8,5,.12,1,"Fall",2],
+ ["cabbage","Cabbage","head",110,3.00,"Transplant Feb to Mar, and Aug to Sep",22,8,2.5,.10,1,"Spring",2],
+ ["lettuce","Lettuce","head",250,3.00,"Feb to Mar, and Sep to Oct",15,10,4,.15,1,"Spring",3],
+ ["onion","Green onions","bunch",250,2.50,"Sets Sep to Nov, or Feb",15,2,5,.08,0,"Fall",4],
+ ["tomato","Tomatoes, staked","lb",400,3.50,"Transplant late Mar to May 1",40,30,12,.08,1,"Summer",1],
+ ["bell","Bell peppers","lb",180,3.00,"Transplant Apr to May",35,12,6,.08,1,"Summer",2],
+ ["hotpep","Hot peppers","pint",120,3.00,"Transplant Apr to May",30,8,6,.20,1,"Summer",2],
+ ["eggplant","Eggplant","lb",250,3.00,"Transplant mid Apr to May",30,10,7,.08,1,"Summer",1],
+ ["okra","Okra","lb",120,4.00,"Mid Apr to mid Jul",5,3,12,.10,0,"Summer",1],
+ ["peas","Purple hull peas, in hull","lb",60,3.00,"May to Jul",6,2,10,.10,0,"Summer",2],
+ ["butter","Butter beans, shelled","pint",40,5.00,"Mid Apr to Jun",8,6,12,.20,0,"Summer",2],
+ ["corn","Sweet corn","dozen",15,7.00,"Mid Mar to Apr 30",6,2,2,.15,0,"Spring",2],
+ ["squash","Summer squash","lb",250,2.50,"Apr to May, and Aug",6,6,7,.06,0,"Spring",1],
+ ["cuke","Cucumbers, trellised","lb",300,2.00,"Apr to May, and Aug",6,12,8,.06,0,"Spring",1],
+ ["melon","Watermelon","each",40,6.00,"Mid Apr to May 31",8,6,2,0,0,"Summer",1],
+ ["canta","Cantaloupe","each",50,4.00,"Mid Apr to May 31",8,6,3,0,0,"Summer",1],
+ ["sweetpot","Sweet potatoes","lb",250,2.50,"Slips May to Jun",35,3,4,.05,1,"Summer",1],
+ ["spgreens","Sweet potato greens","bunch",80,3.00,"May to Aug",10,2,4,.12,1,"Summer",1],
+ ["roselle","Roselle (hibiscus)","lb",30,10.00,"Transplant May",15,3,8,.20,1,"Summer",1],
+ ["custom","Other crop","unit",100,3.00,"Your own planting dates",10,5,5,.10,0,"Spring",1]
+];
+const LIBMAP = Object.fromEntries(LIB.map(r=>[r[0],r]));
+const CHANNELS = [["fm","Farmers market","retail",50],["stand","Farm stand or roadside stand","retail",50],["share","Share box or CSA","retail",45],["direct","Church, neighbor or workplace sales","retail",50],["whole","Wholesale: grocery, restaurant, school","wholesale",20]];
+const CHMAP = Object.fromEntries(CHANNELS.map(r=>[r[0],r]));
+const COUNTIES = ["Bolivar","Carroll","Coahoma","DeSoto","Holmes","Humphreys","Issaquena","Leflore","Panola","Quitman","Sharkey","Sunflower","Tallahatchie","Tate","Tunica","Warren","Washington","Yazoo","Other"];
+const COSTS = [["seed","Seed or transplants"],["fert","Compost and fertilizer"],["amend","Lime and soil amendments"],["pest","Pest and disease control"],["supplies","Mulch, stakes, row cover, shade cloth"],["water","Irrigation water"],["pack","Packaging: bags, bands, pints"],["mkt","Market fees and sales costs"]];
+const HOURS = [["Starting plants",[["seedlings","Seeding trays and tending transplants"]]],["Field growing",[["prep","Bed prep"],["plant","Seeding or transplanting"],["weed","Weeding and cultivation"],["water","Watering and scouting"]]],["Harvest, wash and pack",[["harvest","Harvest"],["pack","Wash and pack"]]],["Selling",[["market","Market, delivery and drive time"]]]];
+const HKEYS = HOURS.flatMap(g=>g[1].map(k=>k[0]));
+const KEY = "rr-crop-costing-v2";
+
+function defaults(){
+  return { garden:{ name:"Remedy Farms plot", grower:"", role:"Rising Roots AmeriCorps member", county:"Washington", bedFeet:600, bedLength:25, seasons:3, laborRate:15, fringe:15,
+    overhead:[["Plot fee or land lease",0],["Insurance",0],["Tool repairs and replacement",75],["Water system and hoses, yearly share",60],["Fencing and deer protection",60],["Compost bins and shared infrastructure",50],["Market table, canopy and scale",40],["Food safety supplies: gloves, sanitizer, bins",45],["Fuel to market",80],["Office, records and phone",25]] },
+    crops:[], active:null, seq:1, rankBy:"netPct" };
+}
+let S;
+try{ const raw = localStorage.getItem(KEY); S = raw ? JSON.parse(raw) : defaults(); }catch(e){ S = defaults(); }
+if(!S || !S.garden || !Array.isArray(S.crops)) S = defaults();
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} }
+
+const $ = s=>document.querySelector(s);
+const num = v=>{ const n = parseFloat(v); return isFinite(n)?n:0; };
+const clampP = v=>Math.max(0,Math.min(100,num(v)));
+const money = (v,d)=>{ const neg=v<-0.0049; const a=Math.abs(v); const s=a.toLocaleString("en-US",{minimumFractionDigits:d??0,maximumFractionDigits:d??0}); return (neg?"−$":"$")+s; };
+const pct = v=>(v<0?"−":"")+Math.abs(v*100).toLocaleString("en-US",{maximumFractionDigits:0})+"%";
+const n1 = v=>v.toLocaleString("en-US",{maximumFractionDigits:1});
+const esc = s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const cls = v=>v>=0?"pos":"neg";
+function toast(t){ const el=$("#toast"); el.textContent=t; el.classList.add("show"); clearTimeout(toast._t); toast._t=setTimeout(()=>el.classList.remove("show"),2200); }
+
+/* ---------- calculations ---------- */
+function effRate(){ return num(S.garden.laborRate)*(1+num(S.garden.fringe)/100); }
+function ohTotal(){ return S.garden.overhead.reduce((a,r)=>a+num(r[1]),0); }
+function ohPerFoot(){ const bf=num(S.garden.bedFeet), se=num(S.garden.seasons)||1; return bf>0 ? ohTotal()/(bf*se) : 0; }
+function calc(c, m){
+  m = Object.assign({p:1,y:1,loss:1}, m||{});
+  const beds=num(c.beds), feet=num(c.bedLength)*beds;
+  const gross=num(c.yieldBed)*beds*m.y;
+  const fl=clampP(c.lossField)*m.loss/100, sh=clampP(c.shrink)*m.loss/100;
+  const afterField=gross*(1-fl), mk=afterField*(1-sh);
+  const lostField=gross-afterField, lostShrink=afterField-mk;
+  const soldP=clampP(c.soldPct)/100, donP=Math.min(1-soldP, clampP(c.donPct)/100);
+  const sold=mk*soldP, don=mk*donP, home=Math.max(0,mk-sold-don);
+  const price=num(c.price)*m.p, sales=sold*price;
+  const direct=COSTS.reduce((a,k)=>a+num(c.costs[k[0]]),0)*beds;
+  const hrs=HKEYS.reduce((a,k)=>a+num(c.hours[k]),0)*beds, labor=hrs*effRate();
+  const gp=sales-direct-labor, gm=sales>0?gp/sales:(gp<0?-1:0);
+  const g=Math.min(.95,clampP(c.gmGoal)/100);
+  const target= sold>0 ? (direct+labor)/(sold*(1-g)) : 0;
+  const be= sold>0 ? (direct+labor)/sold : 0;
+  const oh=feet*ohPerFoot(), net=gp-oh, tc=direct+labor+oh;
+  return { beds, feet, gross, mk, lostField, lostShrink, sold, don, home, sales, direct, hrs, labor, gp, gm, g, target, be, oh, net, tc,
+    netPct: tc>0?net/tc:0, fullBe: sold>0?tc/sold:0, perHr: hrs>0?(sales-direct)/hrs:0, perFt: feet>0?net/feet:0,
+    lostValue:(lostField+lostShrink)*num(c.price), commVal:(don+home)*num(c.price) };
+}
+function active(){ return S.crops.find(c=>c.id===S.active) || null; }
+
+const r2=v=>Math.round(v*100)/100, rq=v=>Math.round(v*10)/10;
+function newCrop(key){
+  const L=LIBMAP[key];
+  const c={ id:"c"+(S.seq++), key, name:L[1], unit:L[2], season:L[11], bedLength:num(S.garden.bedLength)||25, rows:L[12], beds:2,
+    yieldBed:0, channel:"fm", price:L[4], priceSrc:"starter", gmGoal:50, lossField:10, shrink:10, soldPct:70, donPct:20, costs:{}, hours:{} };
+  COSTS.forEach(k=>c.costs[k[0]]=0); HKEYS.forEach(k=>c.hours[k]=0);
+  fillStarter(c); return c;
+}
+function fillStarter(c){
+  const L=LIBMAP[c.key]||LIBMAP.custom, s=num(c.bedLength)/100, rf=(num(c.rows)||L[12])/L[12];
+  const whole = CHMAP[c.channel] && CHMAP[c.channel][2]==="wholesale";
+  c.yieldBed = Math.round(L[3]*s*rf*10)/10;
+  if(c.priceSrc==="starter") c.price = r2(L[4]*(whole?0.6:1));
+  const soldUnits = c.yieldBed*(1-clampP(c.lossField)/100)*(1-clampP(c.shrink)/100)*clampP(c.soldPct)/100;
+  Object.assign(c.costs,{ seed:r2(L[6]*s*rf), fert:r2(15*s), amend:r2(4*s), pest:r2(5*s), supplies:r2(L[7]*s), water:r2(6*s), pack:r2(L[9]*soldUnits*(whole?1.3:1)), mkt:r2((whole?2:5)*s) });
+  Object.assign(c.hours,{ seedlings:rq((L[10]?0.25:0)*s*rf), prep:rq(1*s), plant:rq((L[10]?1:0.5)*s*rf), weed:rq(1.5*s), water:rq(1*s), harvest:rq(L[8]*s*rf), pack:rq(L[8]*0.25*s*rf), market:rq((whole?0.4:0.75)*s) });
+}
+
+/* ---------- navigation ---------- */
+document.querySelectorAll("nav.steps button").forEach(b=>b.addEventListener("click",()=>show(b.dataset.view)));
+function show(v){
+  document.querySelectorAll("nav.steps button").forEach(b=>b.setAttribute("aria-selected", b.dataset.view===v?"true":"false"));
+  document.querySelectorAll("section.view").forEach(s=>s.classList.toggle("on", s.id==="v-"+v));
+  if(v==="budget") renderBudget(); if(v==="plan") renderPlan(); if(v==="setup") renderSetup();
+  window.scrollTo({top:0});
+}
+
+/* ---------- setup ---------- */
+$("#g-county").innerHTML = COUNTIES.map(c=>`<option>${c}</option>`).join("");
+document.querySelectorAll("[data-g]").forEach(el=>{
+  el.addEventListener("input",()=>{ const k=el.dataset.g; S.garden[k] = (el.type==="number"||k==="seasons") ? num(el.value) : el.value; save(); updateSetup(); });
+});
+function renderSetup(){
+  document.querySelectorAll("[data-g]").forEach(el=>{ el.value = S.garden[el.dataset.g]; });
+  const box=$("#oh-list");
+  box.innerHTML = S.garden.overhead.map((r,i)=>`<div class="oh-row"><input type="text" aria-label="Cost name" data-oh="${i}" data-f="0" value="${esc(r[0])}"><div class="inwrap"><span class="pre">$</span><input type="number" aria-label="Yearly amount for ${esc(r[0])}" min="0" inputmode="decimal" data-oh="${i}" data-f="1" value="${r[1]}"></div><button class="x" aria-label="Remove ${esc(r[0])}" data-ohx="${i}">×</button></div>`).join("");
+  box.querySelectorAll("input").forEach(el=>el.addEventListener("input",()=>{ const i=+el.dataset.oh; S.garden.overhead[i][+el.dataset.f] = el.dataset.f==="1"?num(el.value):el.value; save(); updateSetup(); }));
+  box.querySelectorAll("[data-ohx]").forEach(b=>b.addEventListener("click",()=>{ S.garden.overhead.splice(+b.dataset.ohx,1); save(); renderSetup(); }));
+  updateSetup();
+}
+$("#oh-add").addEventListener("click",()=>{ S.garden.overhead.push(["New cost",0]); save(); renderSetup(); const ins=$("#oh-list").querySelectorAll('input[type=text]'); const last=ins[ins.length-1]; last.focus(); last.select(); });
+function updateSetup(){
+  $("#oh-total").textContent = money(ohTotal());
+  $("#eff-rate").textContent = money(effRate(),2);
+  const pf=ohPerFoot();
+  $("#oh-rate").innerHTML = num(S.garden.bedFeet)>0
+    ? `That works out to <b>${money(pf,2)}</b> per bed foot each season, or <b>${money(pf*num(S.garden.bedLength||25),2)}</b> for one ${n1(num(S.garden.bedLength||25))}-foot bed. The Whole garden view charges each crop its share so you can see true net profit.`
+    : `Enter your total bed feet to spread these costs across your beds.`;
+}
+
+/* ---------- budget ---------- */
+$("#p-new").innerHTML = `<option value="">Choose a crop</option>` + LIB.map(r=>`<option value="${r[0]}">${esc(r[1])}</option>`).join("");
+$("#b-channel").innerHTML = CHANNELS.map(r=>`<option value="${r[0]}">${esc(r[1])}</option>`).join("");
+$("#p-add").addEventListener("click",()=>{
+  const k=$("#p-new").value; if(!k){ $("#p-new").focus(); toast("Choose a crop to add first"); return; }
+  const c=newCrop(k); S.crops.push(c); S.active=c.id; save(); $("#p-new").value=""; renderBudget(); toast(`${c.name} added`);
+});
+$("#p-select").addEventListener("change",e=>{ S.active=e.target.value; save(); renderBudget(); });
+$("#b-fill").addEventListener("click",()=>{ const c=active(); if(!c) return; fillStarter(c); save(); renderBudget(); toast(`Starter values filled for a ${n1(num(c.bedLength))}-foot bed`); });
+$("#b-del").addEventListener("click",()=>{ const c=active(); if(!c) return; if(!confirm(`Delete the ${c.name} budget?`)) return; S.crops=S.crops.filter(x=>x!==c); S.active=S.crops.length?S.crops[S.crops.length-1].id:null; save(); renderBudget(); toast("Crop deleted"); });
+document.querySelectorAll("[data-c]").forEach(el=>el.addEventListener(el.tagName==="SELECT"?"change":"input",()=>{
+  const c=active(); if(!c) return; const k=el.dataset.c; c[k] = el.type==="number" ? num(el.value) : el.value;
+  if(k==="channel"){ c.gmGoal=CHMAP[c.channel][3]; $("#b-goal").value=c.gmGoal; }
+  save(); updateBudget(); if(["name","season","beds"].includes(k)) fillPicker();
+}));
+function fillPicker(){
+  $("#p-select").innerHTML = S.crops.length ? S.crops.map(c=>`<option value="${c.id}" ${c.id===S.active?"selected":""}>${esc(c.name)}, ${esc(c.season)}, ${n1(num(c.beds))} beds</option>`).join("") : `<option>None yet</option>`;
+  $("#p-select").disabled = !S.crops.length;
+}
+function renderBudget(){
+  if(!active() && S.crops.length) S.active=S.crops[0].id;
+  fillPicker(); const c=active();
+  $("#budget-empty").classList.toggle("hidden", !!c); $("#budget-body").classList.toggle("hidden", !c);
+  if(!c) return;
+  document.querySelectorAll("[data-c]").forEach(el=>el.value=c[el.dataset.c]);
+  const L=LIBMAP[c.key]||LIBMAP.custom;
+  $("#b-window").innerHTML = `Typical Delta planting window: <b>${esc(L[5])}</b>`;
+  $("#cost-list").innerHTML = COSTS.map(k=>`<div class="field"><label for="cc-${k[0]}">${k[1]}</label><div class="inwrap"><span class="pre">$</span><input type="number" id="cc-${k[0]}" data-cc="${k[0]}" min="0" step="0.01" inputmode="decimal" value="${c.costs[k[0]]}"></div></div>`).join("");
+  $("#hour-list").innerHTML = HOURS.map(g=>`<div class="bucket">${g[0]}</div>`+g[1].map(k=>`<div class="field"><label for="hh-${k[0]}">${k[1]}</label><input type="number" id="hh-${k[0]}" data-hh="${k[0]}" min="0" step="0.1" inputmode="decimal" value="${c.hours[k[0]]}"></div>`).join("")).join("");
+  $("#cost-list").querySelectorAll("input").forEach(el=>el.addEventListener("input",()=>{ c.costs[el.dataset.cc]=num(el.value); save(); updateBudget(); }));
+  $("#hour-list").querySelectorAll("input").forEach(el=>el.addEventListener("input",()=>{ c.hours[el.dataset.hh]=num(el.value); save(); updateBudget(); }));
+  updateBudget();
+}
+function updateBudget(){
+  const c=active(); if(!c) return; const r=calc(c), u=c.unit||"unit";
+  const ch=CHMAP[c.channel]||CHANNELS[0];
+  $("#b-yield-u").textContent = `${u}s from one bed, before losses`;
+  $("#b-goal-hint").textContent = ch[2]==="wholesale" ? "About 20% is a good wholesale target" : "40 to 60% is a good retail target";
+  $("#b-src-warn").classList.toggle("hidden", c.priceSrc!=="starter");
+  $("#b-eff").textContent = money(effRate(),2);
+  const homeP=Math.max(0,100-num(c.soldPct)-num(c.donPct));
+  $("#b-home").textContent = (num(c.soldPct)+num(c.donPct)>100) ? "Sold and donated add up to more than 100%. Lower one of them." : `The remaining ${n1(homeP)}% goes home with the grower.`;
+  $("#cost-total").textContent = money(r.direct,2);
+  $("#hour-total").textContent = `${n1(r.hrs)} hrs, ${money(r.labor)}`;
+
+  // verdict + margin bar
+  const met = r.sales>0 && r.gm>=r.g;
+  const S0=Math.max(r.sales,0.01);
+  let seg=[r.direct,r.labor,Math.max(r.gp,0)].map(v=>Math.max(0,v)), tot=Math.max(S0, r.direct+r.labor);
+  const goalLeft = (1-r.g)*S0/tot*100;
+  const said = r.sales<=0 ? `<div class="said no">No sales yet. Set a price and a sold share above zero.</div>`
+    : met ? `<div class="said ok">Goal reached. You beat your ${pct(r.g)} goal by ${Math.round((r.gm-r.g)*100)} points.</div>`
+    : `<div class="said no">Short of your ${pct(r.g)} goal. Charge ${money(r.target,2)} per ${esc(u)} to reach it.</div>`;
+  $("#verdict").innerHTML = `<div class="big ${met?"pos":"neg"}">${r.sales>0?pct(r.gm):"—"}</div><div class="note" style="margin:4px 0 0">gross margin on ${money(r.sales)} in sales</div>${said}
+    <div class="mbar" role="img" aria-label="Of ${money(r.sales)} in sales, ${money(r.direct)} goes to inputs, ${money(r.labor)} to labor, leaving ${money(r.gp)} gross profit">
+      <div class="track"><span style="width:${seg[0]/tot*100}%;background-color:var(--seg1)"></span><span style="width:${seg[1]/tot*100}%;background-color:var(--seg2)"></span><span style="width:${seg[2]/tot*100}%;background-color:var(--seg3)"></span></div>
+      <div class="goal ${goalLeft>70?"flip":""}" style="left:${Math.min(100,goalLeft)}%"><em>Goal</em></div>
+    </div>
+    <div class="legend"><span><i style="background:var(--seg1)"></i>Direct inputs ${money(r.direct)}</span><span><i style="background:var(--seg2)"></i>Direct labor ${money(r.labor)}</span><span><i style="background:var(--seg3)"></i>Gross profit ${money(r.gp)}</span></div>
+    ${r.direct+r.labor>r.sales && r.sales>0?`<p class="warn">Costs run past sales by ${money(r.direct+r.labor-r.sales)}. You lose money on every ${esc(u)} sold.</p>`:""}`;
+
+  $("#kpis").innerHTML = `
+    <div class="kpi"><div class="v ${cls(r.gp)}">${money(r.gp)}</div><div class="l">Gross profit for ${n1(r.beds)} beds</div></div>
+    <div class="kpi"><div class="v">${money(r.target,2)}</div><div class="l">Price needed to reach your goal, you charge ${money(num(c.price),2)}</div></div>
+    <div class="kpi"><div class="v">${money(r.be,2)}</div><div class="l">Break-even price per ${esc(u)}, inputs and labor</div></div>
+    <div class="kpi"><div class="v ${r.perHr>=effRate()?"pos":"neg"}">${money(r.perHr,2)}</div><div class="l">Sales minus inputs, per hour worked</div></div>
+    <div class="kpi"><div class="v ${cls(r.net)}">${money(r.net)}</div><div class="l">Net profit after ${money(r.oh)} share of yearly overhead</div></div>
+    <div class="kpi"><div class="v">${money(r.fullBe,2)}</div><div class="l">Break-even price with overhead</div></div>`;
+
+  $("#left").innerHTML = `<div class="left-row"><div class="v neg">${money(r.lostValue)}</div><div class="note" style="margin:0"><b style="color:var(--ink)">${n1(r.lostField+r.lostShrink)} ${esc(u)}s grown but never sold, shared or eaten.</b><br>${n1(r.lostField)} lost before harvest, ${n1(r.lostShrink)} after harvest.</div></div>`;
+
+  const base=r.gp, rows=[["Cut losses in half",{loss:.5}],["Grow 10% more per bed",{y:1.1}],["Raise price 10%",{p:1.1}],["Raise price 20%",{p:1.2}]];
+  $("#levers").innerHTML = `<thead><tr><th>Lever</th><th>Gross profit</th><th>Change</th></tr></thead><tbody><tr><td>As budgeted</td><td class="${cls(base)}">${money(base)}</td><td></td></tr>${rows.map(([t,m])=>{const v=calc(c,m).gp, d=v-base; return `<tr><td>${t}</td><td class="${cls(v)}">${money(v)}</td><td class="${cls(d)}">${d>=0?"+":""}${money(d)}${base>0?` (${d>=0?"+":""}${pct(d/base)})`:""}</td></tr>`}).join("")}</tbody>`;
+
+  $("#feed").innerHTML = `<div class="left-row"><div class="v pos">${n1(r.don+r.home)}</div><div class="note" style="margin:0"><b style="color:var(--ink)">${esc(u)}s donated, shared or taken home</b><br>${n1(r.don)} donated and ${n1(r.home)} home use, worth ${money(r.commVal)} at market price.</div></div>`;
+}
+
+/* ---------- whole garden ---------- */
+const METRICS = {
+  netPct:["Net profit %",r=>r.netPct,v=>pct(v),"Net profit divided by total cost, including the crop's share of overhead. Shows which crops use your money best."],
+  net:["Total net profit",r=>r.net,v=>money(v),"Dollars each crop brings home after all costs. High here also means customers want plenty of it."],
+  gp:["Gross profit",r=>r.gp,v=>money(v),"What is left after production costs. Shows your growing skill with each crop."],
+  gm:["Gross margin %",r=>r.gm,v=>pct(v),"Gross profit as a share of sales. Compare with each crop's goal."],
+  perFt:["Net profit per bed foot",r=>r.perFt,v=>money(v,2),"Which crops make the best use of scarce bed space."]
+};
+$("#rank-by").addEventListener("change",e=>{ S.rankBy=e.target.value; save(); renderPlan(); });
+function renderPlan(){
+  const has=S.crops.length>0;
+  $("#plan-empty").classList.toggle("hidden",has); $("#plan-body").classList.toggle("hidden",!has);
+  if(!has) return;
+  const rows=S.crops.map(c=>({c,r:calc(c)}));
+  const T=rows.reduce((a,{c,r})=>{a.sales+=r.sales;a.gp+=r.gp;a.hrs+=r.hrs;a.comm+=r.commVal;a.oh+=r.oh;a.feet+=r.feet;a.direct+=r.direct;a.labor+=r.labor;return a},{sales:0,gp:0,hrs:0,comm:0,oh:0,feet:0,direct:0,labor:0});
+  const OH=ohTotal(), gardenNet=T.gp-OH, gm=T.sales>0?T.gp/T.sales:0;
+  $("#plan-kpis").innerHTML = `
+    <div class="kpi"><div class="v">${money(T.sales)}</div><div class="l">Expected sales</div></div>
+    <div class="kpi"><div class="v ${cls(T.gp)}">${money(T.gp)}</div><div class="l">Gross profit, all crops</div></div>
+    <div class="kpi"><div class="v ${gm>=.4?"pos":"neg"}">${pct(gm)}</div><div class="l">Garden gross margin</div></div>
+    <div class="kpi"><div class="v">${money(OH)}</div><div class="l">Yearly overhead</div></div>
+    <div class="kpi"><div class="v ${cls(gardenNet)}">${money(gardenNet)}</div><div class="l">Garden net profit</div></div>
+    <div class="kpi"><div class="v pos">${money(T.comm)}</div><div class="l">Community food value</div></div>`;
+  $("#oh-cover").innerHTML = OH<=0 ? `Add your yearly overhead in Garden setup to see whether gross profit covers it.`
+    : T.gp>=OH ? `Your crops' gross profit covers all ${money(OH)} of yearly overhead with <b>${money(gardenNet)}</b> left for grower pay and profit.`
+    : `Gross profit covers <b>${pct(Math.max(0,T.gp)/OH)}</b> of your ${money(OH)} yearly overhead. The garden is <b>${money(OH-Math.max(0,T.gp))}</b> short. Raise prices on crops below goal, cut losses, or give more beds to your best crops.`;
+
+  const key=S.rankBy in METRICS?S.rankBy:"netPct", M=METRICS[key]; $("#rank-by").value=key; $("#rank-note").textContent=M[3];
+  const sorted=[...rows].sort((a,b)=>M[1](b.r)-M[1](a.r)), vals=sorted.map(x=>M[1](x.r));
+  const mx=Math.max(...vals.map(Math.abs),0.0001), W=560, rowH=30, lab=180, H=sorted.length*rowH+8, hasNeg=vals.some(v=>v<0);
+  const zero=hasNeg?lab+(W-lab)/2:lab, span=hasNeg?(W-lab)/2-56:(W-lab)-70;
+  $("#plan-chart").innerHTML = `<div class="tscroll"><svg viewBox="0 0 ${W} ${H}" width="100%" style="min-width:420px;font-family:inherit" role="img" aria-label="Crops ranked by ${M[0]}">
+    <line x1="${zero}" x2="${zero}" y1="0" y2="${H}" stroke="var(--line)" stroke-width="1.5"/>
+    ${sorted.map(({c},i)=>{const v=vals[i], w=Math.abs(v)/mx*span, y=i*rowH+5, x=v>=0?zero:zero-w, nm=`${i+1}. ${c.name}`;
+      return `<text x="${lab-10}" y="${y+14}" text-anchor="end" font-size="13" fill="var(--ink)">${esc(nm.length>23?nm.slice(0,22)+"…":nm)}</text>
+      <rect x="${x}" y="${y}" width="${Math.max(w,1.5)}" height="20" rx="4" fill="${v>=0?"var(--gain)":"var(--loss)"}"/>
+      <text x="${v>=0?zero+w+6:zero-w-6}" y="${y+14}" font-size="12.5" text-anchor="${v>=0?"start":"end"}" fill="var(--muted)">${M[2](v)}</text>`}).join("")}
+  </svg></div>`;
+
+  const bf=num(S.garden.bedFeet);
+  $("#season-bars").innerHTML = ["Spring","Summer","Fall"].map(s=>{ const f=rows.filter(x=>x.c.season===s).reduce((a,x)=>a+x.r.feet,0); const p=bf>0?f/bf*100:0;
+    return `<div class="sb"><div class="top"><span>${s}</span><span>${n1(f)} of ${n1(bf)} ft${p>100?", over by "+n1(f-bf):""}</span></div><div class="track"><div class="fill ${p>100?"over":""}" style="width:${Math.min(p,100)}%"></div></div></div>`}).join("");
+
+  $("#plan-table").innerHTML = `<thead><tr><th>Crop</th><th>Season</th><th>Beds</th><th>Sales</th><th>Gross profit</th><th>Margin</th><th>Goal</th><th>Net profit</th><th>Net %</th><th>Shared</th></tr></thead>
+   <tbody>${rows.map(({c,r})=>`<tr><td><a href="#" data-open="${c.id}">${esc(c.name)}</a></td><td>${esc(c.season)}</td><td>${n1(r.beds)}</td><td>${money(r.sales)}</td><td class="${cls(r.gp)}">${money(r.gp)}</td><td class="${r.gm>=r.g?"pos":"neg"}">${pct(r.gm)}</td><td>${pct(r.g)}</td><td class="${cls(r.net)}">${money(r.net)}</td><td>${pct(r.netPct)}</td><td>${n1(r.don+r.home)} ${esc(c.unit)}</td></tr>`).join("")}</tbody>
+   <tfoot><tr><td>Total</td><td></td><td></td><td>${money(T.sales)}</td><td>${money(T.gp)}</td><td>${pct(gm)}</td><td></td><td>${money(T.gp-T.oh)}</td><td></td><td>${money(T.comm)}</td></tr></tfoot>`;
+  $("#plan-table").querySelectorAll("[data-open]").forEach(a=>a.addEventListener("click",e=>{e.preventDefault(); S.active=a.dataset.open; save(); show("budget");}));
+}
+$("#reset").addEventListener("click",()=>{ if(!confirm("Clear every crop and garden setting and start over?")) return; S=defaults(); save(); renderPlan(); toast("New plan started"); });
+
+/* ---------- export (standalone) ---------- */
+function saveFile(filename, text, type){
+  const blob=new Blob([text],{type});
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=filename;
+  document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href); a.remove();},500);
+}
+const fbase=()=>(S.garden.name||"garden").replace(/[^\w\- ]+/g,"").trim().replace(/\s+/g,"-");
+$("#csv").addEventListener("click",()=>{
+  const q=v=>`"${String(v).replace(/"/g,'""')}"`;
+  const head=["Crop","Season","Unit","Bed length ft","Rows per bed","Beds","Harvest per bed","Lost before harvest %","Lost after harvest %","Sold %","Donated %","Channel","Price","Price source","Gross margin goal %","Sales $","Direct inputs $","Labor hours","Direct labor $","Gross profit $","Gross margin %","Price to reach goal $","Break-even price $","Overhead share $","Net profit $","Net profit %","Lost produce value $","Community food value $"];
+  const lines=[["Garden",S.garden.name],["Grower",S.garden.grower],["Role",S.garden.role],["County",S.garden.county],["Total bed feet",S.garden.bedFeet],["Seasons per year",S.garden.seasons],["Effective labor cost per hour $",effRate().toFixed(2)],["Yearly overhead $",ohTotal().toFixed(2)],[],head].map(r=>r.map(q).join(","));
+  S.crops.forEach(c=>{const r=calc(c); lines.push([c.name,c.season,c.unit,c.bedLength,c.rows,c.beds,c.yieldBed,c.lossField,c.shrink,c.soldPct,c.donPct,(CHMAP[c.channel]||CHANNELS[0])[1],c.price,c.priceSrc,c.gmGoal,r.sales.toFixed(2),r.direct.toFixed(2),r.hrs.toFixed(2),r.labor.toFixed(2),r.gp.toFixed(2),(r.gm*100).toFixed(1),r.target.toFixed(2),r.be.toFixed(2),r.oh.toFixed(2),r.net.toFixed(2),(r.netPct*100).toFixed(1),r.lostValue.toFixed(2),r.commVal.toFixed(2)].map(q).join(","));});
+  saveFile(fbase()+"-crop-budgets.csv", lines.join("\n"), "text/csv"); toast("Spreadsheet downloaded");
+});
+$("#save-plan").addEventListener("click",()=>{ saveFile(fbase()+"-plan.json", JSON.stringify(S,null,1), "application/json"); toast("Plan file downloaded"); });
+$("#open-plan").addEventListener("click",()=>$("#plan-file").click());
+$("#plan-file").addEventListener("change",e=>{
+  const f=e.target.files[0]; if(!f) return; const rd=new FileReader();
+  rd.onload=()=>{ try{ const d=JSON.parse(rd.result); if(!d.garden||!Array.isArray(d.crops)) throw 0; S=d; save(); renderPlan(); toast("Plan opened"); }catch(err){ toast("That file isn't a Delta Crop Costing plan"); } e.target.value=""; };
+  rd.readAsText(f);
+});
+$("#print").addEventListener("click",()=>window.print());
+
+renderSetup();
+})();
+</script>
+</body>
+</html>
